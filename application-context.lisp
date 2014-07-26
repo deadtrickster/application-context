@@ -38,17 +38,20 @@
   (setf (gethash name (application-context-storage *application*)) new-value))
 
 (defmacro defappvar (name &optional (value nil) documentation)
+  "Defines variable whose value depends on application context"
   #-single-instance
   `(progn
      (setf (get ',name 'default) (lambda () ,value))
      (define-symbol-macro ,name
-         (appvar ',name)))
+         (appvar ',name))
+     (when ,documentation (setf  (documentation ',name 'variable) ,documentation)))
   #+single-instance
   `(progn
      (defglobalvar ,name +default+)
      (push (lambda ()
              (setq ,name ,value))
-           *var-initializers*)))
+           *var-initializers*)
+     (when ,documentation (setf  (documentation ',name variable) ,documentation))))
 
 #+single-instance
 (defun init-variables ()
@@ -65,6 +68,7 @@
 
 #-single-instance
 (defmacro with-application (app-var &body body)
+  "Sets application context for context-dependent variables"
   `(let ((*application* ,app-var))
      ,@body))
 
